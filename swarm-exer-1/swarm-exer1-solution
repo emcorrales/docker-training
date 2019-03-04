@@ -1,0 +1,25 @@
+#!/bin/bash
+
+# Create a Docker machines for every service.
+docker-machine create vote
+docker-machine create redis
+docker-machine create worker
+docker-machine create db
+docker-machine create result
+
+docker-machine ssh vote
+docker swarm init
+
+# Create a network named frontend and backend.
+docker network create --driver overlay frontend
+docker network create --driver overlay backend
+
+# Create a service named 'vote', and set its network to 'frontend'
+docker service create --name vote --publish 80:80 --replicas 3 \
+  --network frontend dockersamples/examplevotingapp_vote:before
+
+# Create a service for redis
+docker service create --name redis --network frontend redis:3.2
+
+# Create a service named 'worker', and set its network to 'frontend'
+docker service create --name worker --network frontend dockersamples/examplevotingapp_worker
